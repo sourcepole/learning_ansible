@@ -1,7 +1,7 @@
 Learning ansible
 ================
 
-This is a intermediate level to learn ansible from scratch.
+This is a intermediate level course to learn ansible from scratch.
 
 The course is made to work on Debian based systems (Ubuntu, Mint...)
 but should be easily transferable to other Linux distributions or
