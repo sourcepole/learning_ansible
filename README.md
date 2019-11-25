@@ -73,7 +73,7 @@ define the ansible inventory
       $ vim inventory/production
       vm
 
-* tell ansible about where it's resources are
+* tell ansible about where its resources are
 
       $ vim ansible.cfg
       [defaults]
