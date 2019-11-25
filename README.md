@@ -485,6 +485,24 @@ tell the ansible to ask you for the password:
 
 Otherwise ansible will complain.
 
+more important stuff
+--------------------
+
+Only here, since I'm running out of time:
+
+* with_items
+* templates
+* writing modules
+* { role: foo, param: p }
+* default/main.yml
+* --check --diff
+* handlers
+* tags
+* action modifiers: become_user, change_mode, changed_when, ...
+* set_fact
+* include/include_role/import_task
+* blocks
+* per host, per group variables
 
 clean up
 --------
