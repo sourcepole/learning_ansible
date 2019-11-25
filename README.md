@@ -488,7 +488,7 @@ Otherwise ansible will complain.
 more important stuff
 --------------------
 
-Only here, since I'm running out of time:
+Only keywords here, since I'm running out of time:
 
 * with_items
 * templates
