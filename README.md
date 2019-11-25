@@ -334,19 +334,156 @@ as a jinja expression. So we might write...
         "msg": "Are we on buster - True"
     }
 
+task formatting
+---------------
+
+Previously we've written:
+
+    - name: tell user that we're on buster
+      debug: msg="whoa, we're on Debian {{ ansible_distribution_release }}"
+
+Ansible understands that and it's ok for short
+one liners. A bit longer would, but semantically
+equivalent would be clean YAML:
+
+    - name: tell user that we're on buster
+      debug:
+        msg: whoa, we're on Debian {{ ansible_distribution_release }}"
+
+What do we have there syntactically? A `-` introduces
+an element in an array in yaml. So we're adding a
+`task` to the `tasks` list.
+
+If a line is *not* preceded by a minus, then that's
+a key value pair. So `name` is the key of a dictionary
+entry and "tell user that we're on buster" is the value
+of that dictionary entry.
+
+In fact we're defining the "name" of a task inside a tasks
+list.
+
+Next `debug` is the name of a module. That module takes a
+parameter. So we have a dictionary entry with the name
+"debug" that consist of a dictionary or as value. That
+dictionary contains the parameters for that `debug` module,
+first of which `msg` which represents the message that
+`debug` should output.
+
+In fact `msg` itself *can* be an array, in which case
+we'd write:
+
+    - name: tell user that we're on buster
+      debug:
+        msg:
+          - "Whoa!"
+          - "We're on Debian {{ ansible_distribution_release }}"
+
+roles
+-----
+
+Ansible has a concept of
+ ["roles"](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html).
+The metaphorical idea would be that you have machines,
+that you assign roles in a playbook. You have machine
+`vm` that acts like a mail server f.ex.
+
+So you would create a role `mail_server`:
+
+    $ mkdir -p roles/mail_server
+
+Our first task in that role would be to install the
+server. There's a specialized module for package
+installation: `apt`:
+
+    $ mkdir roles/mail_server/tasks
+    $ vim roles/mail_server/tasks/main.yml
+    - name: install exim mail server
+      apt:
+        pkg: exim4
+
+Ansible is searching for tasks in a role by default
+under `roles/role_name/tasks/main.yml`.
+
+Now let's assign that role to our `vm`:
+
+    $ vim mail_hub.yml
+    - name: vm
+      roles:
+        - mail_server
+
+and execute it:
+
+idempotence
+-----------
+
+let's execute it again:
+
+Now ansible is telling us, that the result of our
+"install exim mail server" was "ok", because it
+didn't need to re-install the package.
+
+If we run the playbook again and again, the
+result will be the same. If we deinstall the
+package then ansible will re-install it again.
+
+So we want two things:
+
+* if nothing needs to be changed, then ansible
+  should detect that and take no action
+
+* no matter what, the result of a play should
+  be always the same. Play, roles, tasks should
+  be idempotent.
+
 copy module
 -----------
 
-Let's have a look at a different module from the mentioned
-available modules, f.ex.
-[copy](https://docs.ansible.com/ansible/latest/modules/copy_module.html):
+Let's copy a TLS certificate over to the mail
+server, so that it can do SMTPS.
 
-    $ vim copy_secret.yml
-    - hosts: vm
-      tasks:
-        - name: copy database access password
-          copy: src=secret dest=secret
+We use the
+[copy](https://docs.ansible.com/ansible/latest/modules/copy_module.html)
+module for that:
 
+    $ vim roles/mail_server/tasks/main.yml
+    [...]
+
+    - name: copy certificate over to mail server
+      copy:
+        src: certificate.key
+        destination: /etc/exim4/certificate.key
+
+If we run the playbook we note that ansible can't find
+`certificate.key`. Let's provide it to ansible:
+
+    $ mkdir roles/mail_server/files
+
+That is the default place where roles look for files.
+Let's put the certificate.key there:
+
+    $ cp certificate_from_somewhere.key roles/mail_server/files/certificate.key
+
+(You can use whatever you want for `certificate_from_somewhere.key`,
+ it won't be used, this is just an example).
+
+file encryption
+---------------
+
+If we keep our ansible infrastructure in git, then
+`roles/mail_server/files/certificate.key` would be
+in there in clear text.
+
+Let's encrypt it then:
+
+    $ ansible-vault encrypt roles/mail_server/files/certificate.key
+
+Ansible will ask for passwords. After this that
+file is encrypted. Now however you will need to
+tell the ansible to ask you for the password:
+
+    $ ansible-playbook mail_hub.yml --ask-for-pass
+
+Otherwise ansible will complain.
 
 
 clean up
