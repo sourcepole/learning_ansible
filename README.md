@@ -231,7 +231,7 @@ You can run that playbook:
     ok: [vm]
     
     PLAY RECAP *******************************************
-    vm                         : ok=2    changed=0    unreachable=0    failed=0
+    vm         : ok=2    changed=0    unreachable=0    failed=0
 
 Ansible executes the play, executes a "Gathering Facts" task
 and then our "is the machine there?" task.
@@ -245,7 +245,7 @@ information gathering
 What's that "Gathering Facts" task we've just seen? It's
 ansible finding out things about the target system.
 
-We can run this fact gathering step standalone:
+We can run this fact gathering step standalone...
 
     $ ansible vm -m setup
     vm | SUCCESS => {
@@ -257,10 +257,87 @@ We can run this fact gathering step standalone:
                 "fec0::5054:ff:fe12:3456",
     [...]
 
+... and it outputs heaps of infos about the system,
+which could be reused to f.ex. feed some other database.
+
+Within the context of an ansible play it can be used
+to make decisions:
+
+conditionals, variables
+--------------------
+
+Ansible's `gather_facts` aka `setup` collects
+information that we can reuse in plays:
+
+    $ vim is_buster.yml
+    - hosts: vm
+      tasks:
+        - name: tell user that we're on buster
+          debug: msg="whoa, we're on Debian buster"
+          when: ansible_distribution_release == 'buster'
+
+    $ ansible-playbook is_buster.yml
+    PLAY [vm] ********************************************
+    
+    TASK [Gathering Facts] *******************************
+    ok: [vm]
+    
+    TASK [tell user that we're on buster] ****************
+    ok: [vm] => {
+        "msg": "whoa we're on Debian buster"
+    }
+    
+    PLAY RECAP *******************************************
+    vm         : ok=2    changed=0    unreachable=0    failed=0   
+
+We are using the `debug` module here, that accepts a `msg`
+parameter, which it outputs.
+
+Also the task is executed conditionally, depending on whether
+the `when:` condition is true or false.
+
+In this case we're checking whether ansible's
+`ansible_distribution_release` variable is equal to the
+value `buster`.
+
+The `ansible_distribution_release` variable gets set by
+ansible's `gather_facts` aka `setup` task.
+
+Jinja2
+------
+
+What follows the `when:` ansible keyword is a "jinja2 expression".
+[Jinja2](https://jinja.palletsprojects.com/) is a Python
+templating language. That means that all that jinja2 can
+do, we can use for conditionals.
+
+But we can use jinja2 expressions more or less anywhere in
+a playbook (or in a task or in a role, more later):
+
+    - hosts: vm
+      tasks:
+        - name: tell user that we're on buster
+          debug: msg="whoa, we're on Debian {{ ansible_distribution_release }}"
+
+This will do what you think it will (try it out!). If
+ansible finds a double quoted string with a "{{ }}" element
+then everything inside the curly brackets will be interpreted
+as a jinja expression. So we might write...
+
+    [...]
+    debug: msg="Are we on buster - {{ ansible_distribution_release == 'buster' }}"
+
+...and we'll get:
+
+    [...]
+    ok: [vm] => {
+        "msg": "Are we on buster - True"
+    }
+
 copy module
 -----------
 
-Let's have a look at another module from the mentioned
+Let's have a look at a different module from the mentioned
 available modules, f.ex.
 [copy](https://docs.ansible.com/ansible/latest/modules/copy_module.html):
 
