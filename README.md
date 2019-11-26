@@ -16,7 +16,7 @@ We set up a virtual machine that we're configuring via ansible.
   
 * create yourself a clean new user and change into it
 
-      $ sudo add user learnansible
+      $ sudo adduser learnansible
       $ su - learnansible
 
 copy your ssh key over to the VM
@@ -32,11 +32,11 @@ copy your ssh key over to the VM
 
 * test that connecting to the VM works without a password prompt
 
-      learnansible:~$ ssh root@localhost -p 555
+      learnansible:~$ ssh root@localhost -p 5555
 
 * configure ssh for easy ssh access to the vm
 
-      learnansible:~$ vim ssh root@localhost -p 555
+      learnansible:~$ vim ~/.ssh/config
       Host vm
       HostName localhost
       Port 5555
