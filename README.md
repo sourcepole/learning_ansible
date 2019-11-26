@@ -418,6 +418,18 @@ idempotence
 
 let's execute it again:
 
+    $ ansible-playbook mail_hub.yml 
+    PLAY [vm] ********************************************
+    
+    TASK [Gathering Facts] *******************************
+    ok: [vm]
+    
+    TASK [mail_server : install exim mail server] ********
+    ok: [vm]
+    
+    PLAY RECAP *******************************************
+    vm         : ok=2    changed=1    unreachable=0    failed=0   
+
 Now ansible is telling us, that the result of our
 "install exim mail server" was "ok", because it
 didn't need to re-install the package.
