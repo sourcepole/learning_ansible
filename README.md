@@ -415,6 +415,18 @@ Now let's assign that role to our `vm`:
 
 and execute it:
 
+    $ ansible-playbook mail_hub.yml 
+    PLAY [vm] ********************************************
+    
+    TASK [Gathering Facts] *******************************
+    ok: [vm]
+    
+    TASK [mail_server : install exim mail server] ********
+    changed: [vm]
+    
+    PLAY RECAP *******************************************
+    vm         : ok=2    changed=1    unreachable=0    failed=0   
+
 idempotence
 -----------
 
@@ -430,7 +442,7 @@ let's execute it again:
     ok: [vm]
     
     PLAY RECAP *******************************************
-    vm         : ok=2    changed=1    unreachable=0    failed=0   
+    vm         : ok=2    changed=0    unreachable=0    failed=0   
 
 Now ansible is telling us, that the result of our
 "install exim mail server" was "ok", because it
