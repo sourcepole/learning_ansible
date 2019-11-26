@@ -26,6 +26,8 @@ copy your ssh key over to the VM
 
       learnansible:~$ ssh-keygen
 
+  for the sake of simplicity do *not* protect your key with a password.
+
 * copy your new ssh public key over to the vm
 
       learnansible:~$ ssh-copy-id -p 5555 root@localhost
@@ -348,7 +350,7 @@ equivalent would be clean YAML:
 
     - name: tell user that we're on buster
       debug:
-        msg: whoa, we're on Debian {{ ansible_distribution_release }}"
+        msg: "whoa, we're on Debian {{ ansible_distribution_release }}"
 
 What do we have there syntactically? A `-` introduces
 an element in an array in yaml. So we're adding a
@@ -407,7 +409,7 @@ under `roles/role_name/tasks/main.yml`.
 Now let's assign that role to our `vm`:
 
     $ vim mail_hub.yml
-    - name: vm
+    - hosts: vm
       roles:
         - mail_server
 
@@ -717,3 +719,10 @@ clean up
 Remove the stuff we've created.
 
 * deluser --remove-home learnansible
+
+credits
+-------
+
+Thanks:
+
+* Mathias Walker
