@@ -26,7 +26,7 @@ create a virtual machine
 
 * start a virtual machine with that ISO file
 
-      $ kvm -hda debian.img -cdrom debian-10.0.0-amd64-netinst.iso -boot d -m 512 -net user -net nic
+      $ kvm -hda debian.img -cdrom debian-10.2.0-amd64-netinst.iso -boot d -m 512 -net user -net nic
 
 * go through install
 
