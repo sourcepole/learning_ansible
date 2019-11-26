@@ -477,7 +477,7 @@ module for that:
     - name: copy certificate over to mail server
       copy:
         src: certificate.key
-        destination: /etc/exim4/certificate.key
+        dest: /etc/exim4/certificate.key
 
 If we run the playbook we note that ansible can't find
 `certificate.key`. Let's provide it to ansible:
