@@ -507,7 +507,7 @@ Ansible will ask for passwords. After this that
 file is encrypted. Now however you will need to
 tell the ansible to ask you for the password:
 
-    $ ansible-playbook mail_hub.yml --ask-for-pass
+    $ ansible-playbook mail_hub.yml --ask-vault-pass
 
 Otherwise ansible will complain. Ansible will
 automatically and transparently decrypt the
