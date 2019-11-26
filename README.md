@@ -529,7 +529,7 @@ then we could just add:
     - name: copy public certificate over to mail server
       copy:
         src: certificate.pub
-        destination: /etc/exim4/certificate.pub
+        dest: /etc/exim4/certificate.pub
 
 We duplicate the existing instructions. But we want
 to follow the
@@ -546,7 +546,7 @@ write:
     - name: copy certificate parts over to mail server
       copy:
         src: "{{ item }}"
-        destination: "/etc/exim4/{{ item }}"
+        dest: "/etc/exim4/{{ item }}"
       with_items:
         - certificate.key
         - certificate.pub
@@ -580,7 +580,7 @@ instead:
     - name: set smart host
       template:
         src: update-exim4.conf.conf.j2
-        destination: /etc/exim4/update-exim4.conf.conf
+        dest: /etc/exim4/update-exim4.conf.conf
 
 If we run the playbook, we'll notice that ansible can't find
 `update-exim4.conf.conf.j2`. Let's create it. First create
@@ -701,7 +701,7 @@ So first we notify the handler:
     - name: set smart host
       template:
         src: update-exim4.conf.conf.j2
-        destination: /etc/exim4/update-exim4.conf.conf
+        dest: /etc/exim4/update-exim4.conf.conf
       notify: update exim4 config
 
 And we add a handler that knows what to do:
