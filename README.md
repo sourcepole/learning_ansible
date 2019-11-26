@@ -495,20 +495,215 @@ tell the ansible to ask you for the password:
 
     $ ansible-playbook mail_hub.yml --ask-for-pass
 
-Otherwise ansible will complain.
+Otherwise ansible will complain. Ansible will
+automatically and transparently decrypt the
+file as it encounters it.
+
+iterating over items
+--------------------
+
+The TLS certificate we want to copy over to the server
+consists of two parts the public certificate and the
+private key. We have only copied over the key.
+
+If we want to copy over the public certificate as well
+then we could just add:
+
+    $ vim roles/mail_server/tasks/main.yml
+    [...]
+
+    - name: copy public certificate over to mail server
+      copy:
+        src: certificate.pub
+        destination: /etc/exim4/certificate.pub
+
+We duplicate the existing instructions. But we want
+to follow the
+[DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
+principle.
+
+We can achieve that by iterating over the files we
+want to have copied over to the server. So instead we
+write:
+
+    $ vim roles/mail_server/tasks/main.yml
+    [...]
+
+    - name: copy certificate parts over to mail server
+      copy:
+        src: "{{ item }}"
+        destination: "/etc/exim4/{{ item }}"
+      with_items:
+        - certificate.key
+        - certificate.pub
+
+Now run that playbook.
+
+templates and lineinfile
+------------------------
+
+Next we'd like configure the smarhost, where our
+new mailserver relays emails to.
+
+For that we need to set `dc_smarthost='mailrelay.example.org'`
+in `/etc/exim4/update-exim4.conf.conf`.
+
+There are various approaches to solving this problem. One
+is to replace just the on line in that file. We could use
+the [`lineinfile`](https://docs.ansible.com/ansible/latest/modules/lineinfile_module.html)
+module for that. There are also a
+[`blockinfile`](https://docs.ansible.com/ansible/latest/modules/blockinfile_module.html)
+and a [`replace`](https://docs.ansible.com/ansible/latest/modules/replace_module.html)
+that provide similar functionality.
+
+Let's use a different approach and use
+[`templates`](https://docs.ansible.com/ansible/latest/modules/template_module.html)
+instead:
+
+    $ vim roles/mail_server/tasks/main.yml
+    [...]
+
+    - name: set smart host
+      template:
+        src: update-exim4.conf.conf.j2
+        destination: /etc/exim4/update-exim4.conf.conf
+
+If we run the playbook, we'll notice that ansible can't find
+`update-exim4.conf.conf.j2`. Let's create it. First create
+the `templates` directory where a role by default expects
+templates to be.
+
+    $ mkdir roles/mail_server/templates/
+
+Now copy the original config file from our mailserver to
+the `templates` directory:
+
+    $ scp vm:/etc/exim4/update-exim4.conf.conf roles/mail_server/templates/update-exim4.conf.conf.j2
+
+You'll notice the `.j2` extension, which implies that this
+is a Jinja2 template. Now we modify that original file:
+
+    $ vim roles/mail_server/templates/update-exim4.conf.conf.j2
+
+We replace the line:
+
+    dc_smarthost=''
+
+with
+
+    dc_smarthost='{{ mail_relay }}'
+
+You notice the Jinja2 syntax.
+
+We could have put:
+
+    dc_smarthost='mailrelay.example.org'
+
+in there, but this time we want to make the task generic,
+so in the future we can use that role to configure other
+mail hubs. So we now need to set the variable `mail_relay`:
+
+    $ vim mail_hub.yml
+    - hosts: vm
+      roles:
+        - { role: mail_server, mail_relay: mailrelay.example.org }
+
+role syntax in playbooks
+------------------------
+
+alternatively we can write:
+
+    $ vim mail_hub.yml
+    - hosts: vm
+      roles:
+        - role: mail_server
+          mail_relay: mailrelay.example.org
+
+or
+
+
+    $ vim mail_hub.yml
+    - hosts: vm
+      roles:
+        - role: mail_server
+          vars:
+            mail_relay: mailrelay.example.org
+
+it amounts to the same. You'll maybe want to use the
+first form for short one-liners and the second one
+otherwise.
+
+more on Jinja2
+--------------
+
+Jinja2 is a powerful templating language. It supports
+conditionals, looping, filters and more. You'll want
+to browse its documentation if you need to construct
+more complex templates.
+
+default values for variables
+----------------------------
+
+If we set up a few mail servers, we might notice that
+in most of the cases our mail relay is `mailrelay.example.org`,
+we only rarely are requred to use a different one.
+
+So let's add a default for the `mail_relay` variable:
+
+    $ mkdir roles/mail_server/defaults/
+    $ vim roles/mail_server/defaults/main.yml
+    mail_relay: mailrelay.example.org
+
+Now we do not need to pass the `mail_relay` variable
+to the `mail_server` role if it's `mailrelay.example.org`:
+
+    $ vim mail_hub.yml
+    - hosts: vm
+      roles:
+        - mail_server
+
+handlers
+--------
+
+Only configuring the mail server is not enough for the
+changes to take effect. Often we need to restart or
+reload the daemon.
+
+However restarting a daemon on every change we apply
+to configuration is inefficient. What we want is to
+relaunch the daemon *after all changes have been applied*.
+
+That's what handlers are for. We notify them of the
+need to perform an action and in the end, after all
+else is done, ansible will execute that action.
+
+In our case here, we also need to
+run `update-exim4.conf` that will produce
+`/var/lib/exim4/config.autogenerated` from the
+`/etc/exim4/update-exim4.conf.conf` settings.
+
+So first we notify the handler:
+
+    - name: set smart host
+      template:
+        src: update-exim4.conf.conf.j2
+        destination: /etc/exim4/update-exim4.conf.conf
+      notify: update exim4 config
+
+And we add a handler that knows what to do:
+
+    $ mkdir roles/mail_server/handlers
+    $ vim roles/mail_server/handlers/main.yml
+    - name: update exim4 config
+      command: update-exim4.conf
 
 more important stuff
 --------------------
 
 Only keywords here, since I'm running out of time:
 
-* with_items
-* templates
 * writing modules
-* { role: foo, param: p }
-* default/main.yml
 * --check --diff
-* handlers
 * tags
 * action modifiers: become_user, change_mode, changed_when, ...
 * set_fact
