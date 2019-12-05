@@ -732,6 +732,14 @@ Remove the stuff we've created.
 
 * deluser --remove-home learnansible
 
+consulting and courses
+----------------------
+
+If you want to get ansible consulting or hire me for
+an ansible course then please contact me at
+
+Tomáš Pospíšek, `tpo_hp at sourcepole.ch`
+
 credits
 -------
 
